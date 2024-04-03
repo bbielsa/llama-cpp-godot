@@ -1,2 +1,9 @@
 CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
 .vscode/settings.json
+*-build
+*-install
+*.xcodeproj
+**/cmake_install.cmake

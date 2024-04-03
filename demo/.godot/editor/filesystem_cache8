@@ -1,0 +1,13 @@
+ea4bc82a6ad023ab7ee23ee620429895
+::res://::1712112425
+icon.svg::CompressedTexture2D::5925800150319406614::1712106891::1712106896::1::::<><>::
+::res://LlamaCppGodot/::1712112410
+LlamaCppGodot.gdextension::GDExtension::-1::1712112025::0::1::::<><>::
+::res://LlamaCppGodot/icons/::1712112410
+Example.svg::CompressedTexture2D::4864868467463919000::1712098750::1712112426::1::::<><>::
+::res://LlamaCppGodot/lib/::1712112410
+::res://LlamaCppGodot/lib/Darwin-universal/::1712112410
+::res://scenes/::1712111758
+main.tscn::PackedScene::6366346684096542124::1712111758::0::1::::<><>::res://scripts/example.gd
+::res://scripts/::1712109927
+example.gd::GDScript::-1::1712109927::0::1::::<>Node<>::

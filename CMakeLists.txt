@@ -27,7 +27,7 @@ if ( APPLE )
 endif()
 
 # Main project information
-project( GDExtensionTemplate
+project( LlamaCppGodot
     LANGUAGES
         CXX
     VERSION
@@ -139,4 +139,17 @@ set_target_properties( godot-cpp
 target_link_libraries( ${PROJECT_NAME}
     PRIVATE
         godot-cpp
+)
+
+# llama.cpp
+add_subdirectory( vendor/llama.cpp )
+
+set_target_properties( llama
+    PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+)
+
+target_link_libraries( ${PROJECT_NAME}
+    PRIVATE
+        llama
 )

@@ -5,6 +5,15 @@
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 
+#include "common/common.h"
+#include "llama.h"
+
+#include <cmath>
+#include <cstdio>
+#include <string>
+#include <vector>
+
+
 #include "Example.h"
 
 // Used to mark unused parameters to indicate intent and suppress warnings.
@@ -142,6 +151,87 @@ Example::~Example()
 void Example::simpleFunc()
 {
     godot::UtilityFunctions::print( "  Simple func called." );
+}
+
+int32_t get_num_physical_cores() {
+    return 1;
+}
+
+godot::String Example::generate( const godot::String &inBase )
+{
+    const int n_len = 32;
+    gpt_params params;
+    
+    params.prompt = "Hello, world! My name is";
+    params.model = "/Users/brandon/Downloads/llama-2-7b-chat.Q2_K.gguf";
+    
+    llama_backend_init();
+    llama_numa_init(params.numa);
+    
+    llama_model_params model_params = llama_model_default_params();
+    llama_model * model = llama_load_model_from_file(params.model.c_str(), model_params);
+    
+    llama_context_params ctx_params = llama_context_default_params();
+    ctx_params.seed  = 1234;
+    ctx_params.n_ctx = 2048;
+    ctx_params.n_threads = params.n_threads;
+    ctx_params.n_threads_batch = params.n_threads_batch == -1 ? params.n_threads : params.n_threads_batch;
+    
+    llama_context * ctx = llama_new_context_with_model(model, ctx_params);
+    
+    std::vector<llama_token> tokens_list;
+    tokens_list = ::llama_tokenize(ctx, params.prompt, true);
+
+//    const int n_ctx    = llama_n_ctx(ctx);
+//    const int n_kv_req = tokens_list.size() + (n_len - tokens_list.size());
+
+    // create a llama_batch with size 512
+    // we use this object to submit token data for decoding
+
+    llama_batch batch = llama_batch_init(512, 0, 1);
+
+    // evaluate the initial prompt
+    for (size_t i = 0; i < tokens_list.size(); i++) {
+        llama_batch_add(batch, tokens_list[i], i, { 0 }, false);
+    }
+
+    // llama_decode will output logits only for the last token of the prompt
+    batch.logits[batch.n_tokens - 1] = true;
+
+    int n_cur    = batch.n_tokens;
+//    int n_decode = 0;
+
+    while (n_cur <= n_len) {
+        // sample the next token
+        {
+            auto   n_vocab = llama_n_vocab(model);
+            auto * logits  = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+            
+            std::vector<llama_token_data> candidates;
+            candidates.reserve(n_vocab);
+            
+            for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
+                candidates.emplace_back(llama_token_data{ token_id, logits[token_id], 0.0f });
+            }
+            
+            llama_token_data_array candidates_p = { candidates.data(), candidates.size(), false };
+            
+            // sample the most likely token
+            const llama_token new_token_id = llama_sample_token_greedy(ctx, &candidates_p);
+            llama_batch_clear(batch);
+
+            // push this new token for next evaluation
+            llama_batch_add(batch, new_token_id, n_cur, { 0 }, true);
+
+//            n_decode += 1;
+        }
+        
+        n_cur += 1;
+
+        llama_decode(ctx, batch);
+
+    }
+    return inBase;
 }
 
 void Example::simpleConstFunc() const
@@ -594,6 +684,7 @@ void Example::_bind_methods()
     godot::ClassDB::bind_method( godot::D_METHOD( "simple_func" ), &Example::simpleFunc );
     godot::ClassDB::bind_method( godot::D_METHOD( "simple_const_func" ),
                                  &Example::simpleConstFunc );
+    godot::ClassDB::bind_method( godot::D_METHOD( "generate" ), &Example::generate );
     godot::ClassDB::bind_method( godot::D_METHOD( "return_something" ), &Example::returnSomething );
     godot::ClassDB::bind_method( godot::D_METHOD( "return_something_const" ),
                                  &Example::returnSomethingConst );

@@ -74,6 +74,7 @@ public:
 
     // Functions.
     void simpleFunc();
+    godot::String generate( const godot::String &inBase );
     void simpleConstFunc() const;
     godot::String returnSomething( const godot::String &inBase );
     godot::Viewport *returnSomethingConst() const;
